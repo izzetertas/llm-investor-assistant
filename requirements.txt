@@ -1,0 +1,6 @@
+anthropic>=0.40.0
+python-dotenv>=1.0.0   # loads ANTHROPIC_API_KEY from a local .env file
+fastapi>=0.110.0       # thin web UI
+uvicorn>=0.29.0        # ASGI server for the web UI
+# pytest is only needed to run the test suite:
+#   pip install pytest
