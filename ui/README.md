@@ -5,6 +5,16 @@ a thin client over the existing FastAPI backend — all correctness and groundin
 stay in the deterministic Python layer; this app only renders chat and the
 grounding panel.
 
+## Index
+
+- **[Investor Assistant — React UI](#investor-assistant--react-ui)**
+  - [Run (two terminals)](#run-two-terminals)
+  - [Single-port (production-like)](#single-port-production-like)
+  - [What it does](#what-it-does)
+  - [Structure](#structure)
+
+---
+
 ## Run (two terminals)
 
 **1. Backend** (from the repo root, with `ANTHROPIC_API_KEY` in `.env`):
@@ -23,6 +33,8 @@ npm run dev                            # http://localhost:5173
 The Vite dev server proxies `/api/*` to the backend on `:8000`
 (see `vite.config.ts`), so no CORS setup is needed.
 
+[↑ Index](#index)
+
 ## Single-port (production-like)
 
 Build the front-end once, and the FastAPI backend serves it directly — no Vite
@@ -37,6 +49,8 @@ cd .. && uvicorn src.web:app           # http://localhost:8000 serves the React 
 the no-build `static/index.html` otherwise. Use `npm run dev` (above) while
 iterating on the UI; use the build for a clean single-port demo.
 
+[↑ Index](#index)
+
 ## What it does
 
 - Investor picker (simulated login — in production the investor comes from the
@@ -47,6 +61,8 @@ iterating on the UI; use the build for a clean single-port demo.
 - **Grounding panel** under each answer: which deterministic tools ran and the
   source row IDs they returned — generated from the backend trace, not the
   model, so it is the auditable record.
+
+[↑ Index](#index)
 
 ## Structure
 
@@ -65,3 +81,5 @@ ui/
       GroundingTrace.tsx # the grounding panel
       Composer.tsx       # input + send
 ```
+
+[↑ Index](#index)

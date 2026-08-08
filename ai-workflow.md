@@ -1,12 +1,23 @@
-# ai-workflow.md
+# AI Workflow
 
-How AI was used to build the Investor Assistant, what was kept, what was
-changed, and how the output was verified.
+How AI was used to build this project, what was kept, what was changed, and how
+the output was verified.
+
+## Index
+
+- **[AI Workflow](#ai-workflow)**
+  - [Which AI tools and models, and for what](#which-ai-tools-and-models-and-for-what)
+  - [How much of the code was AI-generated](#how-much-of-the-code-was-ai-generated)
+  - [What was rejected or materially changed from AI suggestions](#what-was-rejected-or-materially-changed-from-ai-suggestions)
+  - [How the answers were verified](#how-the-answers-were-verified)
+  - [Next steps](#next-steps)
+
+---
 
 ## Which AI tools and models, and for what
 
 - **Claude (Opus-class, via an agentic coding assistant)** — the primary build
-  tool. Used to: read the brief and dataset guide, inspect the CSV schemas,
+  tool. Used to: read the dataset guide, inspect the CSV schemas,
   propose the architecture, scaffold and write the Python modules, design the
   edge-case test suite, and draft the docs.
 - **Claude Sonnet 4.6 (`claude-sonnet-4-6`)** — the model the *product itself*
@@ -18,31 +29,35 @@ changed, and how the output was verified.
 The split is the whole point of the design: AI writes the *prose*; deterministic
 Python computes the *numbers*.
 
-## Roughly what percentage of the code was AI-generated
+[↑ Index](#index)
 
-~90% of the lines were AI-generated. But the *decisions* were human-directed and
+## How much of the code was AI-generated
+
+~90% of the lines. But the *decisions* were human-directed and
 that is where the value sat: the deterministic-compute-plus-citations
 architecture, the security boundary (investor_id bound in a closure, never a
 tool argument), the choice of which edge cases to test, and the model choice.
 AI was fast at turning those decisions into clean, consistent code; it was not
 trusted to decide what "correct" meant.
 
-## What I rejected or materially changed from AI suggestions, and why
+[↑ Index](#index)
+
+## What was rejected or materially changed from AI suggestions
 
 - **Letting the model do arithmetic / read raw CSVs.** The most tempting
   shortcut — dump the rows into the prompt and ask for the answer — was rejected
   outright. LLMs are unreliable at multi-step FX conversion, MOIC, and joins,
-  and the brief explicitly rewards grounded answers over false confidence. All
+  and a grounded answer beats a confident wrong one. All
   maths lives in `metrics.py`; the model is forbidden (in the system prompt and
   by construction) from computing figures.
 - **Text-to-SQL / code-execution tooling.** Considered and rejected as
-  over-engineering for a 2–3 hour prototype — both weaken the grounding
+  over-engineering at this scope — both weaken the grounding
   guarantee (the model could generate a wrong query) for no benefit at this
   scope.
 - **MCP for the tool layer.** A reasonable production pattern, but overkill for a
   single-process CLI. Kept the tools in-process but separated the *pure*
   functions from the *schemas/dispatch* so they could be re-exposed over MCP
-  later without touching `metrics.py`. (This is called out in the roadmap.)
+  later without touching `metrics.py`. (See `system-design.md`.)
 - **"current_value = units × latest mark" without adjusting for realised units.**
   The first cut ignored partial secondaries. Changed to `remaining_units ×
   mark`, so Tallybook's 30%-sold / 70%-live position is correct.
@@ -53,7 +68,9 @@ trusted to decide what "correct" meant.
   flagged fixed-point as a production requirement in the README — a deliberate,
   documented trade-off rather than a silent one.
 
-## How I verified the assistant's answers were correct
+[↑ Index](#index)
+
+## How the answers were verified
 
 Verification targets the deterministic layer, because that is where the numbers
 come from:
@@ -79,7 +96,7 @@ come from:
 3. **Hand-checks against rows** I read directly (e.g. INV001's Series B 40%
    uncalled commitment surfacing as the exact upcoming capital call).
 4. **Grounding by contract:** the system prompt forbids invented numbers and
-   requires citing the source row IDs the tools return, so a reviewer can trace
+   requires citing the source row IDs the tools return, so anyone can trace
    any figure in an answer back to a CSV row.
 5. **Live answer + guardrail testing**, which caught a real bug: the single-
    position tool returned per-round `current_value` in *deal* currency but the
@@ -91,7 +108,9 @@ come from:
    comparisons (no tool can name another investor), won't compute an IRR it has
    no data for, and won't forecast.
 
-## If I had an autonomous coding agent for another 8 hours
+[↑ Index](#index)
+
+## Next steps
 
 1. **A golden-answer eval set + grader.** ~40 question/expected-figure pairs
    spanning every tool and trap, with an automated check that the assistant's
@@ -106,4 +125,5 @@ come from:
 4. **Decimal/fixed-point money** throughout, with currency-aware rounding rules.
 5. **Wrap the tools as an MCP server** so the same grounded tools serve the CLI,
    a web UI, and the future iOS bot from one place.
-6. **A thin web chat UI** for the walkthrough, reusing the identical tool layer.
+
+[↑ Index](#index)

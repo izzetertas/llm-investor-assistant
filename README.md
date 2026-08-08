@@ -1,9 +1,9 @@
-# Investor Assistant
+# LLM Investor Assistant
 
 A grounded, personalised conversational assistant that answers an investor's
 questions about **their own** portfolio — holdings, valuations, MOIC, fees,
-capital calls, distributions, and account statement — from the Meridian mock
-dataset.
+capital calls, distributions, and account statement — over a synthetic
+SPV/fund dataset.
 
 The guiding principle: **the model talks, deterministic code does the maths.**
 Every number is computed in plain Python from the source CSV rows and carries
@@ -11,6 +11,18 @@ the row IDs it came from, so each answer is auditable and cited. The LLM only
 interprets the question, picks the right tool, and renders a personalised,
 plain-language reply. It never does arithmetic and never sees another
 investor's data.
+
+## Index
+
+- **[LLM Investor Assistant](#llm-investor-assistant)**
+  - [Architecture](#architecture)
+  - [Why this design](#why-this-design)
+  - [Models / APIs used](#models--apis-used)
+  - [Dataset](#dataset)
+  - [How to run](#how-to-run)
+  - [Assumptions](#assumptions)
+  - [Known limitations](#known-limitations)
+  - [Repository layout](#repository-layout)
 
 ---
 
@@ -64,6 +76,8 @@ are pure functions with tests; the part that must be **fluent** (the prose) is
 the model. Swapping the model, or replacing the CLI with a web UI, touches
 nothing in `metrics.py`.
 
+[↑ Index](#index)
+
 ---
 
 ## Why this design
@@ -81,6 +95,8 @@ nothing in `metrics.py`.
   layer as a closure, not exposed as a tool parameter. There is no code path by
   which the model can read another investor's rows.
 
+[↑ Index](#index)
+
 ---
 
 ## Models / APIs used
@@ -95,6 +111,8 @@ Anthropic Python SDK (`anthropic`), manual agentic tool-use loop. Set
 > The assistant runs the **dataset maths offline** even without an API key —
 > see "Running without an API key" below. The key is only needed for the
 > conversational layer.
+
+[↑ Index](#index)
 
 ---
 
@@ -111,6 +129,8 @@ at **2026-06-25**. No external data is used. Edge cases handled:
 - Partial secondaries (Tallybook — 30% realised, 70% still live).
 - Similar names (Northpeak Analytics vs Northpeak Health) — disambiguated.
 - Newly-onboarded investors with zero holdings.
+
+[↑ Index](#index)
 
 ---
 
@@ -163,13 +183,15 @@ cases (exit MOIC includes distributions, write-off shows a loss, pending =
 0 contributed, Tallybook 30%/70% split, Northpeak disambiguation, zero-holding
 investor).
 
+[↑ Index](#index)
+
 ---
 
 ## Assumptions
 
 - The investor is already authenticated; the app is told which `investor_id` is
   logged in — selected in the UI here, but in production this comes from the
-  authenticated session, never the client (per the brief).
+  authenticated session, never the client.
 - **Current value** of a position = remaining units × latest mark, FX-converted;
   0 for fully exited or written-off rounds.
 - **MOIC** = (current value + distributions net of carry) ÷ capital contributed.
@@ -178,6 +200,8 @@ investor).
   shown alongside, because the two differ under partial calls.
 - Admin fees are denominated in USD even on non-USD deals (per the data guide).
 - A fully-waived fee produces no row; absence of a fee row is not an error.
+
+[↑ Index](#index)
 
 ---
 
@@ -190,9 +214,10 @@ investor).
   disambiguation set may need a follow-up.
 - Figures use float arithmetic rounded at display; a production ledger would use
   fixed-point/decimal.
-- No evaluation harness beyond the unit tests — see `ai-workflow.md` for what a
-  further 8 hours would add (a golden-answer eval set and an answer-grounding
-  checker).
+- No evaluation harness beyond the unit tests — a golden-answer eval set and an
+  answer-grounding checker are the next additions; see `ai-workflow.md`.
+
+[↑ Index](#index)
 
 ---
 
@@ -222,3 +247,5 @@ llm-investor-assistant/
 
 > `src/cli.py` (terminal chat) exists as an optional alternative over the same
 > backend, but the **React UI in `ui/` is the primary interface**.
+
+[↑ Index](#index)

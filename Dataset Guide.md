@@ -1,8 +1,16 @@
-# Meridian Mock Dataset — Data Schema & Edge Case Guide
+# Dataset — Schema & Edge Case Guide
 
-This dataset backs the Senior Software Engineer case study. It models a simplified version of the Meridian investor platform: investors make commitments to deals (SPVs), each deal invests in one round of one portfolio company, and the platform tracks allocations, capital contributions, management fees, valuations, distributions and an account statement.
+A synthetic dataset modelling a simplified private-markets investor platform: investors make commitments to deals (SPVs), each deal invests in one round of one portfolio company, and the platform tracks allocations, capital contributions, management fees, valuations, distributions and an account statement.
 
-**All data is synthetic. Every investor name, company name, and deal is fictional and invented for this exercise; any resemblance to a real person or company is coincidental.** Report date is **2026-06-25** (treat this as "today" for any "upcoming" / "current" figure).
+**All data is synthetic. Every investor name, company name, and deal is fictional; any resemblance to a real person or company is coincidental.** Report date is **2026-06-25** (treat this as "today" for any "upcoming" / "current" figure).
+
+## Index
+
+- **[Dataset — Schema & Edge Case Guide](#dataset--schema--edge-case-guide)**
+  - [Entity relationship overview](#entity-relationship-overview)
+  - [Tables](#tables)
+  - [Deliberate edge cases ("the traps")](#deliberate-edge-cases-the-traps)
+  - [Useful derived metrics](#useful-derived-metrics)
 
 ---
 
@@ -37,6 +45,8 @@ Key relationships:
 - **Ticket sizes:** floor ~10k, median ~44k, mean ~80k; most are ≤250k, with **0–2 large tickets of 500k–1m per deal** (each capped at ~55% of the round so no single LP dominates).
 - **Deal sizes:** average ~2m, range ~0.6m–5m.
 - For every deal, the sum of investor commitments equals the SPV's allocation in that round (`sponsor_allocation_m`).
+
+[↑ Index](#index)
 
 ---
 
@@ -187,6 +197,8 @@ Per-investor account statement. Negative = cash out by investor (contributions, 
 
 To convert between two non-USD currencies, go via USD.
 
+[↑ Index](#index)
+
 ---
 
 ## Deliberate edge cases ("the traps")
@@ -217,6 +229,8 @@ To convert between two non-USD currencies, go via USD.
 
 13. **Partial secondary.** Tallybook sold 30% of units in a secondary at 2.4×; the remaining 70% is still marked live. Realised proceeds and unrealised value coexist on one allocation.
 
+[↑ Index](#index)
+
 ---
 
 ## Useful derived metrics
@@ -228,3 +242,5 @@ To convert between two non-USD currencies, go via USD.
 - **Total portfolio value** = Σ current values across allocations, all converted to reporting currency.
 - **Upcoming obligations** = capital_calls + fees (Management/Admin) with a future `due_date` and status Upcoming/Overdue.
 - **Personalisation signals** = age, tech_savviness, number of deals (count allocations), and top sectors (allocations → deals → company sector).
+
+[↑ Index](#index)

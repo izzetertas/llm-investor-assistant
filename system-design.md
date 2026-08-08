@@ -1,10 +1,29 @@
-# Investor Assistant — System Design (staged)
+# System Design (staged)
 
-A whiteboard-ready design, from the case-study prototype up to the full
-relationship-manager bot. Walk it top-to-bottom in an interview. The one idea
-that runs through every layer: **deterministic code owns the numbers and the
-decisions; the model owns the language.** Everything else is built to protect
-that.
+A staged design, from the prototype in this repo up to a full investor
+relationship-manager bot. The one idea that runs through every layer:
+**deterministic code owns the numbers and the decisions; the model owns the
+language.** Everything else is built to protect that.
+
+## Index
+
+- **[System Design (staged)](#system-design-staged)**
+  - [1. Problem statement](#1-problem-statement)
+  - [2. Functional requirements](#2-functional-requirements)
+  - [3. Non-functional requirements](#3-non-functional-requirements)
+  - [4. Scope, assumptions, and (honest) scale](#4-scope-assumptions-and-honest-scale)
+  - [5. Core components](#5-core-components)
+  - [6. High-level architecture](#6-high-level-architecture)
+  - [7. Deep dive — component by component](#7-deep-dive--component-by-component)
+  - [8. Data model (key entities)](#8-data-model-key-entities)
+  - [9. API design (key surfaces)](#9-api-design-key-surfaces)
+  - [10. Request flows (sequences)](#10-request-flows-sequences)
+  - [11. Key design decisions & trade-offs](#11-key-design-decisions--trade-offs)
+  - [12. Failure modes & mitigations](#12-failure-modes--mitigations)
+  - [13. Scaling & evolution](#13-scaling--evolution)
+  - [14. Cost model (shape)](#14-cost-model-shape)
+  - [15. Six-month phasing](#15-six-month-phasing)
+  - [In one paragraph](#in-one-paragraph)
 
 ---
 
@@ -16,6 +35,8 @@ reports and by emailing a human RM, then waiting. Build an assistant that answer
 their questions accurately, cites its sources, adapts to the investor, and
 eventually acts proactively like an RM. It must never expose another investor's
 data and must never give investment advice.
+
+[↑ Index](#index)
 
 ---
 
@@ -35,12 +56,14 @@ data and must never give investment advice.
   token; no email, KYC details, or account numbers), and never send the full
   dataset. (Deep dive: §7.11.)
 
-**Full product (roadmap):**
+**Full product (future stages):**
 - **Proactive nudges**: capital-call/fee reminders, new marks, distributions,
   expiring KYC.
 - **Actions** (human-in-the-loop): document requests, KYC/AML onboarding,
   e-signature hand-off, drafting investor comms, reporting exports.
 - Delivered in the iOS investor app (chat + push).
+
+[↑ Index](#index)
 
 ---
 
@@ -58,11 +81,13 @@ data and must never give investment advice.
 | **Cost efficiency** | Small grounded payloads + cacheable prefixes + cheap model for most traffic. |
 | **Auditability / explainability** | Every tool call, message, and action logged immutably. |
 
+[↑ Index](#index)
+
 ---
 
 ## 4. Scope, assumptions, and (honest) scale
 
-**Confirmed requirements (agreed up front):**
+**Scope decisions:**
 
 | Decision | Choice |
 |---|---|
@@ -71,7 +96,6 @@ data and must never give investment advice.
 | Optimise for | **Correctness & compliance first** — accept higher latency/cost where needed; grounding, audit, and human approval take priority |
 | Clients | **iOS app (primary)** — chat + push for nudges — and a **web ops console** for RMs (approval queue, audit view) |
 | Data protection | **Minimise + redact** customer data sent to the external LLM; provider must contractually **not train** on it and support short/zero retention (ZDR/DPA); in-region hosting as an option |
-
 
 - **Auth is assumed** — the app is told which investor is logged in (production:
   from the authenticated session, never the client).
@@ -84,6 +108,8 @@ data and must never give investment advice.
 - Back-of-envelope: ~1-5k investors, ~5-10 positions each → ~10-50k allocations;
   data in the low millions of rows total; chat volume maybe hundreds-thousands
   of messages/day. Comfortably a single Postgres + a few app instances.
+
+[↑ Index](#index)
 
 ---
 
@@ -103,6 +129,8 @@ data and must never give investment advice.
 10. Observability    tracing, metrics, immutable audit log
 11. Integrations     ledger, fund admin, CRM, KYC/AML, e-sign, comms, valuation/FX
 ```
+
+[↑ Index](#index)
 
 ---
 
@@ -147,6 +175,8 @@ data and must never give investment advice.
 **Two entry paths, one tool layer:** interactive chat (reactive) and the nudge
 engine (proactive) both call the *same* deterministic tools. Reuse = one place to
 keep correct and audited.
+
+[↑ Index](#index)
 
 ---
 
@@ -296,6 +326,8 @@ the model can only ever receive *that one investor's already-authorised, minimal
 data — because the model is **never in the authorization path**. Authorization is
 deterministic and upstream of the model.
 
+[↑ Index](#index)
+
 ---
 
 ## 8. Data model (key entities)
@@ -318,6 +350,8 @@ companies (1) ──< deals(SPV) (1) ──< allocations >── (1) investors
 - Add for production: `documents`, `kyc_records`, `nudges`, `actions`,
   `audit_log`, `sessions`.
 
+[↑ Index](#index)
+
 ---
 
 ## 9. API design (key surfaces)
@@ -334,6 +368,8 @@ GET  /v1/nudges          / push subscription
 - Investor identity comes from the authenticated session — **never a request
   parameter**.
 - `/chat` returns the grounding trace so the client can render the panel.
+
+[↑ Index](#index)
 
 ---
 
@@ -361,6 +397,8 @@ nudge engine → model (draft text)              # phrase only
 → (human approval if material) → push to iOS
 ```
 
+[↑ Index](#index)
+
 ---
 
 ## 11. Key design decisions & trade-offs
@@ -374,6 +412,8 @@ nudge engine → model (draft text)              # phrase only
 | Sonnet default, Opus on demand | Cost/latency; correctness carried by code | Routing logic to maintain |
 | Human-in-the-loop for material actions | Compliance, reversibility | Not fully autonomous — by design |
 | Modest-scale posture | Real base is 100s-1000s of LPs | Don't over-build for throughput |
+
+[↑ Index](#index)
 
 ---
 
@@ -394,6 +434,8 @@ nudge engine → model (draft text)              # phrase only
   identifiers, late-bind sensitive values where possible, no-training/ZDR provider
   terms, encrypted + minimally-retained logs (§7.11).
 
+[↑ Index](#index)
+
 ---
 
 ## 13. Scaling & evolution
@@ -403,6 +445,8 @@ nudge engine → model (draft text)              # phrase only
 - Evolve by adding tools (comparison within own portfolio, time-bounded queries,
   "what changed since last statement") — not by loosening grounding.
 - Multi-region only if data residency demands it (Bedrock/Vertex path exists).
+
+[↑ Index](#index)
 
 ---
 
@@ -416,9 +460,11 @@ nudge engine → model (draft text)              # phrase only
 - Net: intentionally cost-efficient; cost grows with investor count but bounded
   by caching and cheap-model routing.
 
+[↑ Index](#index)
+
 ---
 
-## 15. Six-month phasing (ties to the roadmap)
+## 15. Six-month phasing
 
 - **P0 Foundations (M0-1):** ledger mirror + event bus; tool layer as internal
   service; authZ; audit log; CI eval harness. Ships: hardened grounded Q&A
@@ -432,12 +478,16 @@ nudge engine → model (draft text)              # phrase only
 - **P4 Hardening & GA (M5-6):** scale, red-team, compliance review, observability,
   cost tuning. Ships: GA to all investors.
 
+[↑ Index](#index)
+
 ---
 
-## One-liner to open or close the whiteboard
+## In one paragraph
 
 > "The whole system is organised around one boundary: deterministic code computes
 > and decides — the numbers, the authorization, when to nudge — and the model
 > only turns that into language. Everything else — the mirror, the eval harness,
 > the guardrails, the human-in-the-loop gates — exists to protect that boundary,
 > because in finance a confident wrong number is the worst possible outcome."
+
+[↑ Index](#index)

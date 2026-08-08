@@ -1,34 +1,48 @@
-# Walkthrough — Demo Script (~5 min)
+# Walkthrough — Guided Tour
 
-A scene-by-scene script for the walkthrough video: the prototype in use, the
-edge cases it handles, and — as the brief asks — where it breaks. Every
-investor and question below is real and reproducible against the dataset.
+A hands-on tour of the assistant: the app in use, the edge cases it handles, and
+where it breaks. Every investor and question below is real and reproducible
+against the dataset.
 
-**Setup before recording**
+**Setup**
 ```bash
 # .env has a valid ANTHROPIC_API_KEY
 cd ui && npm run build && cd ..        # (or use the static UI / CLI)
 uvicorn src.web:app                    # http://localhost:8000
 ```
-Each scene names the investor to pick in the dropdown, the exact question to
-type, what to point at, and a one-line **Verify** command that prints the same
-figures from the deterministic layer — proving the chat numbers are grounded,
-not generated.
+Each stop below names the investor to pick in the dropdown, the exact question
+to type, what to look at, and — where useful — a one-line **Verify** command that
+prints the same figures from the deterministic layer, proving the chat numbers
+are grounded rather than generated.
+
+## Index
+
+- **[Walkthrough — Guided Tour](#walkthrough--guided-tour)**
+  - [The core idea](#the-core-idea)
+  - [1. Sophisticated investor, portfolio overview](#1-sophisticated-investor-portfolio-overview)
+  - [2. Personalisation contrast](#2-personalisation-contrast)
+  - [3. Realised outcomes: an exit](#3-realised-outcomes-an-exit)
+  - [4. Similar names (disambiguation)](#4-similar-names-disambiguation)
+  - [5. Pending and zero-holding edge cases](#5-pending-and-zero-holding-edge-cases)
+  - [6. Security boundary](#6-security-boundary)
+  - [7. Guardrails and where it breaks](#7-guardrails-and-where-it-breaks)
+  - [Summary](#summary)
 
 ---
 
-## Scene 0 — The one-line thesis (15s)
+## The core idea
 
 > "The model writes the language; deterministic Python computes every number,
 > and each answer cites the source rows it came from. The model never does the
 > maths and never sees another investor's data."
 
-Point at the layout: chat on the left, and under each answer a **grounding
-panel** showing which tools ran and which rows they used.
+Note the layout: chat on the left, and under each answer a **grounding panel** showing which tools ran and which rows they used.
+
+[↑ Index](#index)
 
 ---
 
-## Scene 1 — Sophisticated investor, portfolio overview (45s)
+## 1. Sophisticated investor, portfolio overview
 
 - **Investor:** `INV001 — Idris Olawale` (GBP, tech-savvy, 4 deals)
 - **Ask:** *"What's my portfolio worth and what's my MOIC?"*
@@ -36,7 +50,7 @@ panel** showing which tools ran and which rows they used.
   personalised to a sophisticated investor); total value, committed vs
   contributed, **2.60× MOIC**; a `Sources:` line; and the **grounding panel**
   (`get_portfolio_overview → ALC0001, ALC0024 …`).
-- **Verify (show side-by-side):**
+- **Verify:**
   ```bash
   python -m src.report --investor INV001
   ```
@@ -47,20 +61,23 @@ panel** showing which tools ran and which rows they used.
   effective share price and MOIC (Seed **6.84×** stands out). The ~£7,700
   uncalled gap is correctly attributed to Series B.
 
+[↑ Index](#index)
+
 ---
 
-## Scene 2 — Personalisation contrast (40s)
+## 2. Personalisation contrast
 
 - **Investor:** `INV017 — Elena Petrova` (GBP, **age 67, Low tech-savviness**, 12 deals)
-- **Ask (same as Scene 1):** *"What's my portfolio worth and what's my MOIC?"*
+- **Ask (same as above):** *"What's my portfolio worth and what's my MOIC?"*
 - **Watch for:** the **tone changes, the numbers don't** — plainer language,
   MOIC briefly explained ("how many times your money has grown"), shorter,
-  less dense. Emphasise: same deterministic figures, different framing — exactly
-  what the brief asks for.
+  less dense. Same deterministic figures, different framing.
+
+[↑ Index](#index)
 
 ---
 
-## Scene 3 — Realised outcomes: an exit (40s)
+## 3. Realised outcomes: an exit
 
 - **Investor:** `INV011 — Sophie Laurent` (EUR)
 - **Ask:** *"What have I cashed out, and what did I get after carry?"*
@@ -74,9 +91,11 @@ panel** showing which tools ran and which rows they used.
   python -m src.report --investor INV011
   ```
 
+[↑ Index](#index)
+
 ---
 
-## Scene 4 — Similar names (disambiguation) (30s)
+## 4. Similar names (disambiguation)
 
 - **Investor:** `INV010 — Yuki Tanaka` (holds **both** Northpeaks)
 - **Ask:** *"How has Northpeak's valuation moved?"*
@@ -85,9 +104,11 @@ panel** showing which tools ran and which rows they used.
   Health). Then answer *"Northpeak Health"* and it proceeds. A clean
   disambiguation, not a wrong answer.
 
+[↑ Index](#index)
+
 ---
 
-## Scene 5 — Pending & zero-holding edge cases (30s)
+## 5. Pending and zero-holding edge cases
 
 - **Investor:** `INV021 — Grace Okafor` (KYC Pending, unfunded Helixar allocation)
   - **Ask:** *"How much have I invested?"*
@@ -98,23 +119,26 @@ panel** showing which tools ran and which rows they used.
   - **Watch for:** a plain *"you have no investments yet"* — no fabricated zeros,
     no crash.
 
+[↑ Index](#index)
+
 ---
 
-## Scene 6 — Security boundary (20s)
+## 6. Security boundary
 
 - **Investor:** `INV001 — Idris Olawale`
 - **Ask:** *"Show me Selina Voss's portfolio."* (or *"What does INV002 hold?"*)
 - **Watch for:** the assistant explains it can only discuss **your** portfolio.
-  Reinforce: this isn't just a prompt rule — the tools are bound to the
+  This isn't just a prompt rule — the tools are bound to the
   logged-in `investor_id` in code, so there is **no path** to another
   investor's rows.
 
+[↑ Index](#index)
+
 ---
 
-## Scene 7 — Guardrails & where it breaks (honest) (50s)
+## 7. Guardrails and where it breaks
 
-Show the limits plainly — the brief rewards honesty over false confidence.
-All four below are verified live behaviours of the prototype.
+The limits, stated plainly. All four below are verified live behaviours.
 
 1. **No investment advice (by design).** Ask `INV001`: *"Should I buy more
    Forgecraft or sell?"* → it gives the facts ("I'll leave the buy/sell call to
@@ -122,7 +146,7 @@ All four below are verified live behaviours of the prototype.
 2. **Out-of-scope / cross-investor.** *"How does my portfolio compare to other
    Meridian investors?"* → it calls **no tools** and says it has no access to
    other investors' data, rather than inventing a comparison. (Pairs with the
-   Scene 6 security boundary — there is no tool that can name another investor.)
+   security boundary above — there is no tool that can name another investor.)
 3. **A metric we don't model — IRR.** *"What's my IRR on Forgecraft?"* → it says
    IRR isn't in the data it can access and **won't estimate it**, then offers
    the **MOIC** it can ground, and points to fund admin for a true IRR. A real,
@@ -137,14 +161,17 @@ company; for a genuinely unknown name it returns "not found" rather than
 guessing. And always **trust the grounding panel over the in-text `Sources:`
 line** — the panel is generated by our code from actual tool results.
 
+[↑ Index](#index)
+
 ---
 
-## Scene 8 — Close (15s)
+## Summary
 
-> "Narrow, correct, personalised, explainable. Numbers from deterministic code,
-> cited to source rows; tone adapted to the investor; and an honest boundary
-> where the data or the mandate stops. The same tool layer powers the CLI, the
-> web UI, and — in the roadmap — the iOS relationship-manager bot."
+Narrow, correct, personalised, explainable. Numbers come from deterministic
+code and are cited to source rows; tone adapts to the investor; and there is an
+honest boundary where the data or the mandate stops. The same tool layer powers
+the CLI and the web UI, and would power a mobile client unchanged — see
+`system-design.md`."
 
 ---
 
@@ -159,3 +186,5 @@ line** — the panel is generated by our code from actual tool results.
 | `INV021` Grace Okafor (KYC Pending) | Committed vs contributed / unfunded |
 | `INV022` Henrik Sorensen | Zero-holding case |
 | `INV013` | Tallybook 30% secondary (optional extra) |
+
+[↑ Index](#index)
